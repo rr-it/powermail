@@ -112,6 +112,11 @@ class ExportService
     protected $emailTemplate = 'Module/ExportTaskMail.html';
 
     /**
+     * @var ?string
+     */
+    protected $exportTemplate;
+
+    /**
      * @param QueryResultInterface|null $mails Given mails for export
      * @param string $format can be 'xls' or 'csv'
      * @param array $additionalProperties add additional properties
@@ -201,9 +206,7 @@ class ExportService
     protected function getFileContent(): string
     {
         $standaloneView = TemplateUtility::getDefaultStandAloneView();
-        $standaloneView->setTemplatePathAndFilename(
-            TemplateUtility::getTemplatePath($this->getRelativeTemplatePathAndFileName())
-        );
+        $standaloneView->setTemplatePathAndFilename($this->getExportTemplate());
         $standaloneView->assignMultiple(
             [
                 'mails' => $this->getMails(),
@@ -533,6 +536,28 @@ class ExportService
     {
         if (!empty($emailTemplate)) {
             $this->emailTemplate = $emailTemplate;
+        }
+        return $this;
+    }
+
+    /**
+     * @return string
+     * @throws Exception
+     * @throws InvalidConfigurationTypeException
+     */
+    public function getExportTemplate(): string
+    {
+        return $this->exportTemplate ?? TemplateUtility::getTemplatePath($this->getRelativeTemplatePathAndFileName());
+    }
+
+    /**
+     * @param string $exportTemplate
+     * @return ExportService
+     */
+    public function setExportTemplate(string $exportTemplate): ExportService
+    {
+        if (!empty($exportTemplate)) {
+            $this->exportTemplate = $exportTemplate;
         }
         return $this;
     }
