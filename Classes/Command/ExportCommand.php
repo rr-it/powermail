@@ -49,6 +49,12 @@ class ExportCommand extends Command
             'Path and filename of email template',
             'EXT:powermail/Resources/Private/Templates/Module/ExportTaskMail.html'
         );
+        $this->addArgument(
+            'exportTemplate',
+            InputArgument::OPTIONAL,
+            'Path and filename of export template',
+            ''
+        );
     }
 
     /**
@@ -84,7 +90,8 @@ class ExportCommand extends Command
             ->setAddAttachment((bool)$input->getArgument('attachment'))
             ->setStorageFolder($input->getArgument('storageFolder'))
             ->setFileName($input->getArgument('fileName'))
-            ->setEmailTemplate($input->getArgument('emailTemplate'));
+            ->setEmailTemplate($input->getArgument('emailTemplate'))
+            ->setExportTemplate($input->getArgument('exportTemplate'));
         if ($exportService->send() === true) {
             $output->writeln('Export finished');
             return 0;
