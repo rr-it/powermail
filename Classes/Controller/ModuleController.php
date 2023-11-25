@@ -12,6 +12,7 @@ use In2code\Powermail\Utility\MailUtility;
 use In2code\Powermail\Utility\ReportingUtility;
 use In2code\Powermail\Utility\StringUtility;
 use TYPO3\CMS\Backend\Routing\Exception\RouteNotFoundException;
+use TYPO3\CMS\Core\TypoScript\TypoScriptService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
 use TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException;
@@ -24,6 +25,28 @@ use TYPO3\CMS\Extbase\Reflection\Exception\PropertyNotAccessibleException;
  */
 class ModuleController extends AbstractController
 {
+    protected function initializeAction(): void
+    {
+        parent::initializeAction();
+        $this->overloadSettingsByPageTsConfig();
+    }
+
+
+    /**
+     * Overload settings by Page-TSconfig tx_powermail.settings
+     */
+    protected function overloadSettingsByPageTsConfig(): void
+    {
+        $pageTsConfig = BackendUtility::getPagesTSconfig($this->id);
+        if(isset($pageTsConfig['tx_powermail.']['settings.'])) {
+            $typoScriptService = $this->objectManager->get(TypoScriptService::class);
+            $pageTsConfigPowermailSettings = $typoScriptService->convertTypoScriptArrayToPlainArray(
+                $pageTsConfig['tx_powermail.']['settings.']
+            );
+
+            $this->settings = array_replace_recursive($this->settings, $pageTsConfigPowermailSettings);
+        }
+    }
 
     /**
      * @param string $forwardToAction
@@ -69,6 +92,11 @@ class ModuleController extends AbstractController
      */
     public function exportXlsAction(): void
     {
+        $templatePathAndFileName = StringUtility::conditionalVariable($this->settings['export']['templateXls'], '');
+        if (!empty($templatePathAndFileName)) {
+            $this->view->setTemplatePathAndFilename($templatePathAndFileName);
+        }
+
         $this->view->assignMultiple(
             [
                 'mails' => $this->mailRepository->findAllInPid($this->id, $this->settings, $this->piVars),
@@ -93,6 +121,11 @@ class ModuleController extends AbstractController
      */
     public function exportCsvAction(): void
     {
+        $templatePathAndFileName = StringUtility::conditionalVariable($this->settings['export']['templateCsv'], '');
+        if (!empty($templatePathAndFileName)) {
+            $this->view->setTemplatePathAndFilename($templatePathAndFileName);
+        }
+
         $this->view->assignMultiple(
             [
                 'mails' => $this->mailRepository->findAllInPid($this->id, $this->settings, $this->piVars),
