@@ -40,6 +40,14 @@ class InputValidator extends StringValidator
     ];
 
     /**
+     * @var array
+     */
+    protected $arrayValidationFieldTypes = [
+        'check',
+        'select'
+    ];
+
+    /**
      * Validation of given Params
      *
      * @param Mail $mail
@@ -61,6 +69,7 @@ class InputValidator extends StringValidator
                 $answer = $this->getAnswerFromField($field, $mail);
                 $this->isValidFieldInMandatoryValidation($field, $answer);
                 $this->isValidFieldInStringValidation($field, $answer);
+                $this->isValidFieldInArrayValidation($field, $answer);
             }
         }
 
@@ -217,6 +226,36 @@ class InputValidator extends StringValidator
                             }
                         }
                     }
+            }
+        }
+    }
+
+    /**
+     * Validate a multi-select or checkbox array for custom validation
+     *
+     * @param Field $field
+     * @param mixed $value
+     * @return void
+     * @throws Exception
+     */
+    protected function isValidFieldInArrayValidation(Field $field, $value): void
+    {
+        if (!empty($value) && in_array($field->getType(), $this->arrayValidationFieldTypes)) {
+            if ($field->getValidation()) {
+                $validation = $field->getValidation();
+                if (!empty($this->settings['validation']['customValidation'][$validation])) {
+                    $extendedValidator = ObjectUtility::getObjectManager()->get(
+                        $this->settings['validation']['customValidation'][$validation]
+                    );
+                    if (method_exists($extendedValidator, 'validate' . ucfirst((string)$validation))) {
+                        if (!$extendedValidator->{'validate' . ucfirst((string)$validation)}(
+                            $value,
+                            $field->getValidationConfiguration()
+                        )) {
+                            $this->setErrorAndMessage($field, 'validation.' . $validation);
+                        }
+                    }
+                }
             }
         }
     }
